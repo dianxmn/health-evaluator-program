@@ -7,7 +7,6 @@
 #define max_test 10
 #define max_recommendation 10
 #define config_file "patient_data.csv"
-
 #define report_file "evaluation_report.txt"
 
 // RYAN PART
@@ -330,3 +329,4 @@ void exerciseAddAvoid(HealthData data, FILE *fp) {
 
     fprintf(fp, "\n==========================================\n");
 }
+
