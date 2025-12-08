@@ -3,8 +3,8 @@
 #include <string.h>
 #include <time.h> 
 
-#define profile_file "the_profile.csv"
-#define report_file  "the_health_report.txt"
+#define profile_file "profile.csv"
+#define report_file "health_report.txt"
 
 typedef struct {
     float bmi;
@@ -511,3 +511,4 @@ int main() {
 
     return 0;
 }
+
