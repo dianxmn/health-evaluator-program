@@ -88,7 +88,7 @@ void saveProfile(Profile p) {
     if (!file) return;
 
     // Modified fprintf to include the full labels
-    fprintf(file, "Name: %s,\nWeight: %.2f,\nHeight: %.2f,\nBlood Pressure Systolic: %d,\nBlood Pressure Diastolic: %d,\nBlood Sugar: %d,\nCholesterol: %d,\nCholesterol Type Option: %d,\nBlood Sugar Option: %d",
+    fprintf(file, "%s,\nWeight: %.2f,\nHeight: %.2f,\nBlood Pressure Systolic: %d,\nBlood Pressure Diastolic: %d,\nBlood Sugar: %d,\nCholesterol: %d,\nCholesterol Type Option: %d,\nBlood Sugar Option: %d",
             p.name, p.weight, p.height, p.bp_sys, p.bp_dias, p.bs, p.chol, p.chol_type, p.hrs);
 
     fclose(file);
@@ -268,6 +268,12 @@ HealthData analyzeData(float weight, float height, int bp_sys, int bp_dias, int 
 // -----------------------------------------
 
 void dietAddAvoid(HealthData data, FILE *fp) {
+    #define PRINT_LINE(fmt, ...) \
+        do { \
+            if(fp) fprintf(fp, fmt, ##__VA_ARGS__); \
+            printf(fmt, ##__VA_ARGS__); \
+        } while(0)
+
     fprintf(fp, "\n==========================================\n");
     fprintf(fp, "            DIET RECOMMENDATIONS\n");
     fprintf(fp, "==========================================\n");
@@ -519,7 +525,6 @@ int main() {
     Profile user;
     int exists = loadProfile(&user);
     int choice;
-    const char* health_report_file = report_file; // Use defined constant
 
     while (1) {
         printf("\n=== MY PERSONAL HEALTH TRACKER ===\n");
@@ -532,17 +537,12 @@ int main() {
         printf("4. View Exercise Recommendations\n");
         printf("5. Exit\n");
         
-        // **ERROR HANDLING HERE (Main Menu Choice)**
         choice = get_valid_int("Choice: ");
 
         if (choice == 1) {
-            // === PROFILE UPDATE/CREATE ===
 
             if (!exists) {
                 printf("\nEnter Name: ");
-                // Ensure to clear the buffer before reading a string after get_valid_int
-                // fgets handles this relatively well, but ensure the previous newline is consumed
-                // The get_valid_int function handles its own buffer consumption, so this should be fine.
                 if (fgets(user.name, sizeof(user.name), stdin) != NULL) {
                     size_t len = strlen(user.name);
                     if (len > 0 && user.name[len - 1] == '\n') {
@@ -551,24 +551,23 @@ int main() {
                 }
             }
 
-            // **ERROR HANDLING HERE (Weight)**
             user.weight = get_valid_int("Weight (kg): ");
-            // **ERROR HANDLING HERE (Height)**
             user.height = get_valid_int("Height (m or cm): ");
             
-            // **ERROR HANDLING HERE (BP Systolic)**
             user.bp_sys = get_valid_int("BP Systolic: ");
-            // **ERROR HANDLING HERE (BP Diastolic)**
             user.bp_dias = get_valid_int("BP Diastolic: ");
             
             printf("<<< Time Since Last Meal for Blood Sugar Test\n");
             printf("      1. 0-2 Hours After Meal\n");
             printf("      2. 2-4 Hours After Meal\n");
             printf("      3. 4-8 Hours After Meal\n");
-            // **ERROR HANDLING HERE (Meal Time Choice)**
-            user.hrs = get_valid_int("Choice: "); // Input 1, 2, or 3 expected
 
-            // **ERROR HANDLING HERE (Blood Sugar)**
+            do {
+                user.hrs = get_valid_int("Choice: "); // Input 1, 2, or 3 expected
+                if (user.hrs > 3) {
+                    printf("Invalid choice. Please enter 1, 2, or 3.\n");
+                }
+            } while (user.hrs > 3);
             user.bs = get_valid_int("Blood Sugar: ");
 
             printf("<<< Type of Cholesterol Tested\n");
@@ -576,10 +575,13 @@ int main() {
             printf("      2. Low-Density Lipoprotein (LDL) Cholesterol\n");
             printf("      3. High-Density Lipoprotein (HDL) Cholesterol\n");
             printf("      4. Triglycerides\n");
-            // **ERROR HANDLING HERE (Cholesterol Type Choice)**
-            user.chol_type = get_valid_int("Choice: "); 
 
-            // **ERROR HANDLING HERE (Cholesterol Value)**
+            do {
+                user.chol_type = get_valid_int("Choice: "); // Input 1, 2, 3, or 4 expected
+                if (user.chol_type > 4) {
+                    printf("Invalid choice. Please enter 1, 2, 3, or 4.\n");
+                }
+            } while (user.chol_type > 4);
             user.chol = get_valid_int("Cholesterol: ");
 
             user.analysis = analyzeData(
@@ -635,4 +637,3 @@ int main() {
 
     return 0;
 }
-
