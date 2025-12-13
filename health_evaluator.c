@@ -268,12 +268,6 @@ HealthData analyzeData(float weight, float height, int bp_sys, int bp_dias, int 
 // -----------------------------------------
 
 void dietAddAvoid(HealthData data, FILE *fp) {
-    #define PRINT_LINE(fmt, ...) \
-        do { \
-            if(fp) fprintf(fp, fmt, ##__VA_ARGS__); \
-            printf(fmt, ##__VA_ARGS__); \
-        } while(0)
-
     fprintf(fp, "\n==========================================\n");
     fprintf(fp, "            DIET RECOMMENDATIONS\n");
     fprintf(fp, "==========================================\n");
@@ -641,3 +635,4 @@ int main() {
 
     return 0;
 }
+
