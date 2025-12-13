@@ -15,6 +15,7 @@ typedef struct {
 
 typedef struct {
     char name[50];
+    int age;
     float weight;
     float height;
     int bp_sys;
@@ -87,7 +88,7 @@ void saveProfile(Profile p) {
     if (!file) return;
 
     // Modified fprintf to include the full labels
-    fprintf(file, "%s,\nWeight: %.2f,\nHeight: %.2f,\nBlood Pressure Systolic: %d,\nBlood Pressure Diastolic: %d,\nBlood Sugar: %d,\nCholesterol: %d,\nCholesterol Type Option: %d,\nBlood Sugar Option: %d",
+    fprintf(file, "%s,\nAge: %s,\nWeight: %.2f,\nHeight: %.2f,\nBlood Pressure Systolic: %d,\nBlood Pressure Diastolic: %d,\nBlood Sugar: %d,\nCholesterol: %d,\nCholesterol Type Option: %d,\nBlood Sugar Option: %d",
             p.name, p.weight, p.height, p.bp_sys, p.bp_dias, p.bs, p.chol, p.chol_type, p.hrs);
 
     fclose(file);
@@ -581,6 +582,7 @@ int main() {
             }
 
             // Calls updated to use get_valid_float for non-whole number inputs
+            user.age = get_valid_int("Age: ");
             user.weight = get_valid_float("Weight (kg): "); 
             user.height = get_valid_float("Height (m): "); // Changed prompt to suggest meters for precision
             
