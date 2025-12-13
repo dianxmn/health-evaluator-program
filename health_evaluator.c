@@ -1,8 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <time.h> 
-
+#include <time.h>
+  
 #define profile_file "profile.csv"
 #define report_file "health_report.txt"
 
@@ -23,11 +23,13 @@ typedef struct {
     int bs;
     int chol;
     int bs_flag;
+    int chol_type;
+    int hrs;
     HealthData analysis;
 } Profile;
 
 // Function prototypes
-HealthData analyzeData(float weight, float height, int bp_sys, int bp_dias, int bs, int chol); 
+HealthData analyzeData(float weight, float height, int bp_sys, int bp_dias, int bs, int chol, int chol_type, int hrs); 
 void dietAddAvoid(HealthData data, FILE *fp);
 void exerciseAddAvoid(HealthData data, FILE *fp);
 
@@ -63,6 +65,20 @@ const char *const chol_labels[] = {
     "High Risk"
 };
 
+const char *const hrs_labels[] = {
+    "0-2 Hours After Meal",
+    "2-4 Hours After Meal",
+    "4-8 Hours After Meal"
+};
+
+const char *const cholType_labels[] = {
+    "Total",
+    "Low-Density Lipoprotein",
+    "High-Density Lipoprotein",
+    "Triglycerides"
+};
+
+
 // -----------------------------------------
 // SAVE PROFILE TO CSV
 // -----------------------------------------
@@ -72,8 +88,8 @@ void saveProfile(Profile p) {
     if (!file) return;
 
     // Modified fprintf to include the full labels
-    fprintf(file, "Name: %s,\nWeight: %.2f,\nHeight: %.2f,\nBlood Pressure Systolic: %d,\nBlood Pressure Diastolic: %d,\nBlood Sugar: %d,\nCholesterol: %d",
-            p.name, p.weight, p.height, p.bp_sys, p.bp_dias, p.bs, p.chol);
+    fprintf(file, "Name: %s,\nWeight: %.2f,\nHeight: %.2f,\nBlood Pressure Systolic: %d,\nBlood Pressure Diastolic: %d,\nBlood Sugar: %d,\nCholesterol: %d,\nCholesterol Type Option: %d,\nBlood Sugar Option: %d",
+            p.name, p.weight, p.height, p.bp_sys, p.bp_dias, p.bs, p.chol, p.chol_type, p.hrs);
 
     fclose(file);
 }
@@ -86,16 +102,16 @@ int loadProfile(Profile* p) {
     FILE* file = fopen(profile_file, "r");
     if (!file) return 0;
 
-    fscanf(file, "%49[^,],%f,%f,%d,%d,%d,%d",
+    fscanf(file, "%49[^,],%f,%f,%d,%d,%d,%d,%d,%d",
            p->name, &p->weight, &p->height,
-           &p->bp_sys, &p->bp_dias, &p->bs, &p->chol);
+           &p->bp_sys, &p->bp_dias, &p->bs, &p->chol, &p->chol_type, &p->hrs);
 
     fclose(file);
 
     p->analysis = analyzeData(
         p->weight, p->height,
         p->bp_sys, p->bp_dias,
-        p->bs, p->chol
+        p->bs, p->chol, p->chol_type, p->hrs
     );
 
     return 1;
@@ -119,11 +135,13 @@ void generateReport(Profile p) {
             p.bp_sys, p.bp_dias,
             bp_labels[p.analysis.bp_status]);
 
-    fprintf(fp, "Blood Sugar: %d (%s)\n",
+    fprintf(fp, "Blood Sugar (%s): %d (%s)\n",
+            hrs_labels[p.hrs - 1],
             p.bs,
             bs_labels[p.analysis.bs_status]);
 
-    fprintf(fp, "Cholesterol: %d (%s)\n",
+    fprintf(fp, "Cholesterol (%s): %d (%s)\n",
+            cholType_labels[p.chol_type - 1],
             p.chol,
             chol_labels[p.analysis.chol_status]);
 
@@ -136,7 +154,7 @@ void generateReport(Profile p) {
 // ANALYSIS FUNCTION
 // -----------------------------------------
 
-HealthData analyzeData(float weight, float height, int bp_sys, int bp_dias, int bs, int chol) {
+HealthData analyzeData(float weight, float height, int bp_sys, int bp_dias, int bs, int chol, int chol_type, int hrs) {
     HealthData data;
 
     // Auto detect height in cm or meters
@@ -170,26 +188,77 @@ HealthData analyzeData(float weight, float height, int bp_sys, int bp_dias, int 
     else if (bp_sys < 120 && bp_dias < 80) 
         data.bp_status = 1;
     else data.bp_status = 0;
-
+        
     // Blood Sugar
-    if (bs < 80)   
-        data.bs_status = 0;
-    else if (bs < 90) 
-        data.bs_status = 1;
-    else if (bs < 140) 
-        data.bs_status = 2;
-    else if (bs < 220) 
-        data.bs_status = 3;
-    else 
-        data.bs_status = 4;
-
+    if (hrs == 1){ // 0-2 Hours After Meal
+        if (bs < 80)   
+            data.bs_status = 0;
+        else if (bs < 90) 
+            data.bs_status = 1;
+        else if (bs < 140) 
+            data.bs_status = 2;
+        else if (bs < 300) 
+            data.bs_status = 3;
+        else 
+            data.bs_status = 4;
+    }
+    else if (hrs == 2){ // 2-4 Hours After Meal
+        if (bs < 70)   
+            data.bs_status = 0;
+        else if (bs < 90) 
+            data.bs_status = 1;
+        else if (bs < 130) 
+            data.bs_status = 2;
+        else if (bs < 220) 
+            data.bs_status = 3;
+        else 
+            data.bs_status = 4;
+    }
+    else { // 4-8 Hours After Meal
+        if (bs < 60)   
+            data.bs_status = 0;
+        else if (bs < 80) 
+            data.bs_status = 1;
+        else if (bs < 120) 
+            data.bs_status = 2;
+        else if (bs < 180) 
+            data.bs_status = 3;
+        else 
+            data.bs_status = 4;
+    }
     // Cholesterol
-    if (chol < 200) 
-        data.chol_status = 0;
-    else if (chol < 240) 
-        data.chol_status = 1;
-    else 
-        data.chol_status = 2;
+    if (chol_type == 1){ // Total Cholesterol
+        if (chol < 200) 
+            data.chol_status = 0;
+        else if (chol < 240) 
+            data.chol_status = 1;
+        else 
+            data.chol_status = 2;
+    }
+    else if (chol_type == 2){ // Low-Density Lipoprotein (LDL) Cholesterol
+        if (chol < 130) 
+            data.chol_status = 0;
+        else if (chol < 160) 
+            data.chol_status = 1;
+        else 
+            data.chol_status = 2;
+    }
+    else if (chol_type == 3){ // High-Density Lipoprotein (HDL) Cholesterol
+        if (chol < 50) 
+            data.chol_status = 2;
+        else if (chol < 60) 
+            data.chol_status = 1;
+        else 
+            data.chol_status = 0;
+    }
+    else{ // Triglycerides
+        if (chol < 150) 
+            data.chol_status = 0;
+        else if (chol < 200) 
+            data.chol_status = 1;
+        else 
+            data.chol_status = 2;
+    }
 
     return data;
 }
@@ -406,13 +475,57 @@ void exerciseAddAvoid(HealthData data, FILE *fp) {
     fprintf(fp, "\n==========================================\n");
 }
 
-// -----------------------------------------
-// MAIN MENU
-// -----------------------------------------
+int get_valid_int(const char *prompt) {
+    int value;
+    int check;
+    char buffer[100]; // Buffer to read the input line
+
+    while (1) {
+        // 1. Print the prompt
+        printf("%s", prompt);
+
+        // 2. Read the entire line of input into a buffer (safer than plain scanf)
+        if (fgets(buffer, sizeof(buffer), stdin) == NULL) {
+            // Error reading input
+            continue; 
+        }
+
+        // 3. Attempt to scan an integer from the buffer
+        int chars_read = 0;
+        // %d reads the integer. %n stores the number of characters read.
+        check = sscanf(buffer, "%d%n", &value, &chars_read);
+
+        // 4. Check the result of sscanf
+        if (check == 1) {
+            // An integer was successfully read. Now check for extra non-whitespace characters.
+            char *p = buffer + chars_read;
+
+            // Check if the rest of the buffer only contains whitespace or newline
+            while (*p != '\0' && (*p == ' ' || *p == '\t' || *p == '\n' || *p == '\r')) {
+                p++;
+            }
+
+            // If *p is the null terminator, the input was valid
+            if (*p == '\0') {
+                return value; // Valid whole number entered. Exit the function.
+            }
+        }
+
+        // 5. If input failed or extra characters were found, print the required error
+        printf("Invalid Input. Please Enter a whole number.\n");
+        // The loop repeats, asking for input again.
+    }
+}
+
+// --------------------------------------------------
+// MAIN FUNCTION 
+// --------------------------------------------------
 
 int main() {
     Profile user;
     int exists = loadProfile(&user);
+    int choice;
+    const char* health_report_file = report_file; // Use defined constant
 
     while (1) {
         printf("\n=== MY PERSONAL HEALTH TRACKER ===\n");
@@ -424,46 +537,68 @@ int main() {
         printf("3. View Diet Recommendations\n");
         printf("4. View Exercise Recommendations\n");
         printf("5. Exit\n");
-        printf("Choice: ");
-
-        int choice;
-        scanf("%d", &choice);
+        
+        // **ERROR HANDLING HERE (Main Menu Choice)**
+        choice = get_valid_int("Choice: ");
 
         if (choice == 1) {
+            // === PROFILE UPDATE/CREATE ===
 
             if (!exists) {
-                printf("Enter Name: ");
-                scanf(" %49[^\n]", user.name);
+                printf("\nEnter Name: ");
+                // Ensure to clear the buffer before reading a string after get_valid_int
+                // fgets handles this relatively well, but ensure the previous newline is consumed
+                // The get_valid_int function handles its own buffer consumption, so this should be fine.
+                if (fgets(user.name, sizeof(user.name), stdin) != NULL) {
+                    size_t len = strlen(user.name);
+                    if (len > 0 && user.name[len - 1] == '\n') {
+                        user.name[len - 1] = '\0'; // Remove newline
+                    }
+                }
             }
 
-            printf("Weight (kg): ");
-            scanf("%f", &user.weight);
+            // **ERROR HANDLING HERE (Weight)**
+            user.weight = get_valid_int("Weight (kg): ");
+            // **ERROR HANDLING HERE (Height)**
+            user.height = get_valid_int("Height (m or cm): ");
+            
+            // **ERROR HANDLING HERE (BP Systolic)**
+            user.bp_sys = get_valid_int("BP Systolic: ");
+            // **ERROR HANDLING HERE (BP Diastolic)**
+            user.bp_dias = get_valid_int("BP Diastolic: ");
+            
+            printf("<<< Time Since Last Meal for Blood Sugar Test\n");
+            printf("      1. 0-2 Hours After Meal\n");
+            printf("      2. 2-4 Hours After Meal\n");
+            printf("      3. 4-8 Hours After Meal\n");
+            // **ERROR HANDLING HERE (Meal Time Choice)**
+            user.hrs = get_valid_int("Choice: "); // Input 1, 2, or 3 expected
 
-            printf("Height (m or cm): ");
-            scanf("%f", &user.height);
+            // **ERROR HANDLING HERE (Blood Sugar)**
+            user.bs = get_valid_int("Blood Sugar: ");
 
-            printf("BP Systolic: ");
-            scanf("%d", &user.bp_sys);
+            printf("<<< Type of Cholesterol Tested\n");
+            printf("      1. Total Cholesterol\n");
+            printf("      2. Low-Density Lipoprotein (LDL) Cholesterol\n");
+            printf("      3. High-Density Lipoprotein (HDL) Cholesterol\n");
+            printf("      4. Triglycerides\n");
+            // **ERROR HANDLING HERE (Cholesterol Type Choice)**
+            user.chol_type = get_valid_int("Choice: "); 
 
-            printf("BP Diastolic: ");
-            scanf("%d", &user.bp_dias);
-
-            printf("Blood Sugar: ");
-            scanf("%d", &user.bs);
-
-            printf("Cholesterol: ");
-            scanf("%d", &user.chol);
+            // **ERROR HANDLING HERE (Cholesterol Value)**
+            user.chol = get_valid_int("Cholesterol: ");
 
             user.analysis = analyzeData(
                 user.weight, user.height,
                 user.bp_sys, user.bp_dias,
-                user.bs, user.chol
+                user.bs, user.chol, user.chol_type,
+                user.hrs
             );
 
             saveProfile(user);
             exists = 1;
 
-            printf("\nProfile saved!\n");
+            printf("\n ===== Profile saved! =====\n");
         }
         else if (choice == 2) {
             if (!exists)
@@ -475,40 +610,34 @@ int main() {
             if (!exists) {
                 printf("No profile exists. Create one first.\n");
             } else {
-                FILE* fp = fopen(report_file, "a");  // append mode
+                FILE* fp = fopen(report_file, "a");
                 if (!fp) fp = stdout;
-                time_t now = time(NULL);
-                struct tm* t = localtime(&now);
-                fprintf(fp, "\n\n===== Diet Recommendations generated on %04d-%02d-%02d %02d:%02d:%02d =====\n",
-                        t->tm_year + 1900, t->tm_mon + 1, t->tm_mday,
-                        t->tm_hour, t->tm_min, t->tm_sec);
 
                 dietAddAvoid(user.analysis, fp);
                 if (fp != stdout) fclose(fp);
-                printf("\nDiet recommendations appended in %s\n", report_file);
+                printf("\n ===== Diet recommendations appended in %s ===== \n", report_file);
             }
         }
         else if (choice == 4) {
             if (!exists) {
                 printf("No profile exists. Create one first.\n");
             } else {
-                FILE* fp = fopen(report_file, "a");  // append mode
+                FILE* fp = fopen(report_file, "a");
                 if (!fp) fp = stdout;
-                time_t now = time(NULL);
-                struct tm* t = localtime(&now);
-                fprintf(fp, "\n\n===== Exercise Recommendations generated on %04d-%02d-%02d %02d:%02d:%02d =====\n",
-                        t->tm_year + 1900, t->tm_mon + 1, t->tm_mday,
-                        t->tm_hour, t->tm_min, t->tm_sec);
 
                 exerciseAddAvoid(user.analysis, fp);
                 if (fp != stdout) fclose(fp);
-                printf("\nExercise recommendations appended in %s\n", report_file);
+                printf("\n ===== Exercise recommendations appended in %s ===== \n", report_file);
             }
         }
-
-        else break;
+        else if (choice == 5) {
+            break;
+        }
+        else {
+            // This case handles valid integers outside the 1-5 range
+            printf("\n ===== Invalid choice. Please enter a number between 1 and 5. ===== \n");
+        }
     }
 
     return 0;
 }
-
