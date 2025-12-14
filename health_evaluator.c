@@ -588,7 +588,7 @@ int main() {
             printf("      3. 4-8 Hours After Meal\n");
 
             do {
-                user.hrs = get_valid_int("Choice: "); // Input 1, 2, or 3 expected
+                user.hrs = get_valid_int("Choice: "); 
                 if (user.hrs > 3) {
                     printf("Invalid choice. Please enter 1, 2, or 3.\n");
                 }
@@ -602,7 +602,7 @@ int main() {
             printf("      4. Triglycerides\n");
 
             do {
-                user.chol_type = get_valid_int("Choice: "); // Input 1, 2, 3, or 4 expected
+                user.chol_type = get_valid_int("Choice: "); 
                 if (user.chol_type > 4) {
                     printf("Invalid choice. Please enter 1, 2, 3, or 4.\n");
                 }
@@ -662,8 +662,3 @@ int main() {
 
     return 0;
 }
-
-
-
-
-
