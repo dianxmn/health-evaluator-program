@@ -1,10 +1,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-  
+
+// Constants for File Names ---
 #define profile_file "profile.csv"
 #define report_file "health_report.txt"
 
+// --- Structure Definitions ---
+// HealthData: Stores the calculated BMI and status codes based on the analysis
 typedef struct {
     float bmi;
     int bmi_status;
@@ -13,6 +16,7 @@ typedef struct {
     int chol_status;
 } HealthData;
 
+// Profile: Stores all user input data and the resulting analysis.
 typedef struct {
     char name[50];
     float weight;
@@ -32,6 +36,8 @@ HealthData analyzeData(float weight, float height, int bp_sys, int bp_dias, int 
 void dietAddAvoid(HealthData data, FILE *fp);
 void exerciseAddAvoid(HealthData data, FILE *fp);
 
+// Global Constant Arrays (for Labels) ---
+// BMI Status Labels 
 const char *const bmi_labels[] = {
     "Underweight",
     "Normal",
@@ -41,6 +47,7 @@ const char *const bmi_labels[] = {
     "Obesity Class 3"
 };
 
+// Blood Pressure Status Labels 
 const char *const bp_labels[] = {
     "Hypotension (Low)",
     "Normal",
@@ -50,6 +57,7 @@ const char *const bp_labels[] = {
     "Hypertensive Crisis"
 };
 
+// Blood Sugar Status Labels
 const char *const bs_labels[] = {
     "Dangerously Low",
     "Low",
@@ -58,18 +66,21 @@ const char *const bs_labels[] = {
     "Dangerously High"
 };
 
+// Cholesterol Status Labels
 const char *const chol_labels[] = {
     "Low Heart Disease Risk",
     "Borderline Risk",
     "High Risk"
 };
 
+// Time Since Last Meal Labels
 const char *const hrs_labels[] = {
     "0-2 Hours After Meal",
     "2-4 Hours After Meal",
     "4-8 Hours After Meal"
 };
 
+// Cholesterol Type Labels
 const char *const cholType_labels[] = {
     "Total",
     "Low-Density Lipoprotein",
@@ -77,13 +88,9 @@ const char *const cholType_labels[] = {
     "Triglycerides"
 };
 
-
-// -----------------------------------------
 // SAVE PROFILE TO CSV
-// -----------------------------------------
-
-void saveProfile(Profile p) {
-    FILE* file = fopen(profile_file, "w");
+void saveProfile(Profile p) {   // Saves the user's current profile data to a CSV file.
+    FILE* file = fopen(profile_file, "w");  // Open file in write mode ("w") - overwrites existing data
     if (!file) return;
 
     // Modified fprintf to include the full labels
@@ -93,52 +100,56 @@ void saveProfile(Profile p) {
     fclose(file);
 }
 
-// -----------------------------------------
 // LOAD PROFILE FROM CSV
-// -----------------------------------------
-
-int loadProfile(Profile* p) {
-    FILE* file = fopen(profile_file, "r");
+int loadProfile(Profile* p) {  // Loads the user's profile data from the CSV file.
+    FILE* file = fopen(profile_file, "r");  // Open file in read mode ("r")
     if (!file) return 0;
 
-    fscanf(file, "%49[^,],%f,%f,%d,%d,%d,%d,%d,%d",
-           p->name, &p->weight, &p->height,
-           &p->bp_sys, &p->bp_dias, &p->bs, &p->chol, &p->chol_type, &p->hrs);
+     // Read the data back from the file. Use the corrected format string.
+    if (fscanf(file, "%49[^,], %d, %f, %f, %d, %d, %d, %d, %d, %d",
+               p->name, &p->age, &p->weight, &p->height,
+               &p->bp_sys, &p->bp_dias, &p->bs, &p->chol, &p->chol_type, &p->hrs) != 10) {
+        fclose(file);
+        return 0; // Failed to read all data
+    }
 
     fclose(file);
 
+    // Re-analyze the data immediately upon loading
     p->analysis = analyzeData(
         p->weight, p->height,
         p->bp_sys, p->bp_dias,
         p->bs, p->chol, p->chol_type, p->hrs
     );
 
-    return 1;
+    return 1;  // Profile loaded successfully
 }
 
-// -----------------------------------------
 // REPORT GENERATOR
-// -----------------------------------------
+void generateReport(Profile p) {  // Generates a basic health summary report in a text file.
+    FILE* fp = fopen(report_file, "w");  // Open the report file in write mode ("w") - overwrites previous report
 
-void generateReport(Profile p) {
-    FILE* fp = fopen(report_file, "w");
-
+    // Report Header
     fprintf(fp, "HEALTH REPORT FOR: %s\n", p.name);
     fprintf(fp, "==============================\n");
-
+  
+    // BMI Summary
     fprintf(fp, "BMI: %.2f (Status: %s)\n",
             p.analysis.bmi,
             bmi_labels[p.analysis.bmi_status]);
-
+  
+    // Blood Pressure Summary
     fprintf(fp, "Blood Pressure: %d/%d (%s)\n",
             p.bp_sys, p.bp_dias,
             bp_labels[p.analysis.bp_status]);
-
+    
+    // Blood Sugar Summary
     fprintf(fp, "Blood Sugar (%s): %d (%s)\n",
             hrs_labels[p.hrs - 1],
             p.bs,
             bs_labels[p.analysis.bs_status]);
-
+  
+    // Cholesterol Summary
     fprintf(fp, "Cholesterol (%s): %d (%s)\n",
             cholType_labels[p.chol_type - 1],
             p.chol,
@@ -149,10 +160,8 @@ void generateReport(Profile p) {
     printf("\n[SUCCESS] Personal report generated in %s\n", report_file);
 }
 
-// -----------------------------------------
 // ANALYSIS FUNCTION
-// -----------------------------------------
-
+// Calculates BMI and determines health status classifications.
 HealthData analyzeData(float weight, float height, int bp_sys, int bp_dias, int bs, int chol, int chol_type, int hrs) {
     HealthData data;
 
@@ -657,6 +666,7 @@ int main() {
 
     return 0;
 }
+
 
 
 
