@@ -19,6 +19,7 @@ typedef struct {
 // Profile: Stores all user input data and the resulting analysis.
 typedef struct {
     char name[50];
+    int age;
     float weight;
     float height;
     int bp_sys;
@@ -94,8 +95,8 @@ void saveProfile(Profile p) {   // Saves the user's current profile data to a CS
     if (!file) return;
 
     // Modified fprintf to include the full labels
-    fprintf(file, "%s,\nWeight: %.2f,\nHeight: %.2f,\nBlood Pressure Systolic: %d,\nBlood Pressure Diastolic: %d,\nBlood Sugar: %d,\nCholesterol: %d,\nCholesterol Type Option: %d,\nBlood Sugar Option: %d",
-            p.name, p.weight, p.height, p.bp_sys, p.bp_dias, p.bs, p.chol, p.chol_type, p.hrs);
+    fprintf(file, "%s, \nAge: %d, \nWeight: %.2f,\nHeight: %.2f,\nBlood Pressure Systolic: %d,\nBlood Pressure Diastolic: %d,\nBlood Sugar: %d,\nCholesterol: %d,\nCholesterol Type Option: %d,\nBlood Sugar Option: %d",
+            p.name, p.age, p.weight, p.height, p.bp_sys, p.bp_dias, p.bs, p.chol, p.chol_type, p.hrs);
 
     fclose(file);
 }
@@ -106,7 +107,7 @@ int loadProfile(Profile* p) {  // Loads the user's profile data from the CSV fil
     if (!file) return 0;
 
      // Read the data back from the file. Use the corrected format string.
-    if (fscanf(file, "%49[^,], %d, %f, %f, %d, %d, %d, %d, %d, %d",
+    if (fscanf(file, "%49[^,], %d, %d, %f, %f, %d, %d, %d, %d, %d, %d",
                p->name, &p->age, &p->weight, &p->height,
                &p->bp_sys, &p->bp_dias, &p->bs, &p->chol, &p->chol_type, &p->hrs) != 10) {
         fclose(file);
@@ -131,6 +132,7 @@ void generateReport(Profile p) {  // Generates a basic health summary report in 
 
     // Report Header
     fprintf(fp, "HEALTH REPORT FOR: %s\n", p.name);
+    fprintf(fp, "AGE: %d\n", p.age);
     fprintf(fp, "==============================\n");
   
     // BMI Summary
@@ -576,6 +578,7 @@ int main() {
                 }
             }
 
+            user.age = get_valid_int("Age: ");
             user.weight = get_valid_int("Weight (kg): ");
             user.height = get_valid_int("Height (m or cm): ");
             
@@ -662,3 +665,4 @@ int main() {
 
     return 0;
 }
+
